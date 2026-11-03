@@ -1,0 +1,53 @@
+{
+  "schemes": [
+    {
+      "id": "post-matric-sc",
+      "name": "Post-Matric Scholarship for SC Students",
+      "name_hi": "अनुसूचित जाति के छात्रों के लिए पोस्ट-मैट्रिक छात्रवृत्ति",
+      "ministry": "Ministry of Social Justice and Empowerment",
+      "target_group": "Scheduled Caste (SC) students",
+      "eligibility": {
+        "education_level": "Post-matriculation or post-secondary stage (Class 11, Class 12, ITI, Diploma, Graduation, Post-Graduation)",
+        "category": "SC",
+        "family_annual_income_limit": 250000,
+        "family_annual_income_limit_text": "₹2,50,000 per annum",
+        "nationality": "Indian",
+        "attendance_requirement": "Regular attendance as per institution guidelines"
+      },
+      "benefits": "Compulsory non-refundable fees covered plus annual maintenance allowance up to ₹13,500 depending on course group and hosteller/day scholar status.",
+      "required_documents": [
+        "Caste Certificate",
+        "Income Certificate (showing annual income ≤ ₹2,50,000)",
+        "Aadhaar Card (seeded with bank account)",
+        "Previous Class / Marksheet (Class 10 or Class 12)",
+        "Fee Receipt & Current Admission Proof"
+      ],
+      "official_url": "https://scholarships.gov.in"
+    },
+    {
+      "id": "pm-usp-csss",
+      "name": "Central Sector Scheme of Scholarship for College and University Students (PM-USP CSSS)",
+      "name_hi": "कॉलेज और विश्वविद्यालय के छात्रों के लिए केंद्रीय क्षेत्र छात्रवृत्ति योजना (PM-USP)",
+      "ministry": "Department of Higher Education, Ministry of Education",
+      "target_group": "Meritorious college & university students (all categories)",
+      "eligibility": {
+        "education_level": "Passed Class 12 in current academic year and enrolled in regular (non-correspondence) degree courses in recognized colleges/universities",
+        "merit_criteria": "Above 80th percentile of successful candidates in relevant stream from respective Board of Examination in Class 12",
+        "category": "All categories (General, OBC, SC, ST, EWS)",
+        "family_annual_income_limit": 450000,
+        "family_annual_income_limit_text": "₹4,50,000 per annum",
+        "nationality": "Indian",
+        "other_conditions": "Must not be availing benefits of any other state or central scholarship scheme"
+      },
+      "benefits": "₹12,000 per annum at graduation level for first 3 years of college; ₹20,000 per annum at post-graduation level.",
+      "required_documents": [
+        "Class 12 Marksheet (with roll number verifying > 80th percentile)",
+        "Income Certificate (showing annual income ≤ ₹4,50,000)",
+        "Aadhaar Card",
+        "College Admission Fee Receipt & Student ID",
+        "Bank Passbook seeded with Aadhaar"
+      ],
+      "official_url": "https://scholarships.gov.in"
+    }
+  ]
+}
