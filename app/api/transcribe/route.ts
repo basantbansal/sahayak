@@ -12,8 +12,9 @@ export async function POST(req: NextRequest) {
 
     const incomingFormData = await req.formData();
     const file = incomingFormData.get('file');
-    // Support optional language override; default to hi-IN for accurate Hindi recognition
-    const languageCode = (incomingFormData.get('language_code') as string | null) || 'hi-IN';
+    // Support dynamic language selection; if 'auto', 'unknown', or empty, allow Sarvam's auto-language identification
+    const rawLanguageCode = incomingFormData.get('language_code') as string | null;
+    const languageCode = rawLanguageCode && rawLanguageCode.trim() !== '' ? rawLanguageCode.trim() : null;
 
     if (!file || !(file instanceof Blob)) {
       return NextResponse.json(
@@ -28,8 +29,12 @@ export async function POST(req: NextRequest) {
     const sarvamFormData = new FormData();
     sarvamFormData.append('file', cleanBlob, 'recording.webm');
     sarvamFormData.append('model', 'saaras:v4');
-    sarvamFormData.append('language_code', languageCode);
     sarvamFormData.append('mode', 'transcribe');
+
+    // Only append language_code if explicitly specified and not 'auto' / 'unknown'
+    if (languageCode && languageCode !== 'auto' && languageCode !== 'unknown') {
+      sarvamFormData.append('language_code', languageCode);
+    }
 
     const response = await fetch('https://api.sarvam.ai/speech-to-text', {
       method: 'POST',
@@ -53,7 +58,7 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await response.json();
-    console.log('Sarvam STT response:', JSON.stringify(result));
+    console.log(`[STT Saaras:v4] Transcript: "${result.transcript ?? ''}" | Detected Lang: "${result.language_code ?? 'unknown'}"`);
 
     const transcript = result.transcript ?? '';
     if (!transcript || !transcript.trim()) {
@@ -67,7 +72,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({
-      transcript,
+      transcript: transcript.trim(),
       language_code: result.language_code || 'hi-IN',
       request_id: result.request_id,
     });

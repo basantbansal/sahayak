@@ -1,121 +1,168 @@
-# Sahayak (सहायक) — Voice-First Multilingual Welfare Scheme & Document Pre-Checker
+# Sahayak Margdarshak (सहायक मार्गदर्शक)
+### Voice-First Spatial UI Navigation & Multilingual Guidance for Indian Welfare Portals
 
-> Built for the **Sarvam AI Hackathon**. A voice-first Indian welfare scheme and document pre-verification navigator designed for Bharat citizens in their local languages.
+[![Next.js](https://img.shields.io/badge/Next.js-14.2-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.x-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
+[![Sarvam AI](https://img.shields.io/badge/Sarvam%20AI-Saaras%20v4%20%7C%20Sarvam--105B%20%7C%20Bulbul%20v4--flash-orange?style=flat-square)](https://sarvam.ai/)
 
----
-
-## 📌 Problem Statement
-
-Every year, millions of eligible Indian students and citizens miss out on government welfare and scholarship programs (like the Post-Matric Scholarship or Central Sector Scheme) due to two major bottlenecks:
-1. **Linguistic & Literacy Barriers**: Complex portal guidelines in English or administrative jargon prevent first-generation learners and rural applicants from understanding eligibility.
-2. **Silent Document Rejections**: Submissions to Direct Benefit Transfer (DBT) and National Scholarship Portals (NSP) frequently fail at the automated KYC stage due to subtle clerical inconsistencies between Aadhaar and Income Certificates (such as minor name spelling mismatches or transposed birth dates).
+> Built for the **Sarvam AI Hackathon**. **Margdarshak (मार्गदर्शक)** is an intelligent, voice-first spatial guidance agent that empowers Bharat citizens to effortlessly navigate dense, complex Indian government welfare portals in Hindi, Hinglish, English, and regional Indic languages.
 
 ---
 
-## 🚀 What Sahayak Does
+## 📌 The Problem
 
-- **Voice-First Indic Querying**: Users speak naturally into the browser mic in Hindi, Marathi, Tamil, English, etc.
-- **Accurate Speech-to-Text (STT)**: Uses Sarvam AI's **Saaras v4** model to transcribe spoken audio and detect language.
-- **Strict, Grounded Scheme Navigation**: Uses Sarvam AI's **Sarvam-105B** foundation model with a zero-hallucination policy to answer eligibility, income ceilings, and document requirements strictly from verified scheme data (`schemes.json`).
-- **Natural Voice Playback (TTS)**: Synthesizes responses back to audio via Sarvam AI's **Bulbul v4-flash** text-to-speech with a single-click "Suno / सुनो" audio button.
-- **Deterministic Document Pre-Verification**: An offline, rule-based verification engine that compares sample citizen documents (Aadhaar vs. Income Certificate) for spelling parity (Levenshtein fuzzy matching) and DOB alignment, producing a high-contrast Red/Green "Rejection Risk" report with actionable remediation guidance before submission.
-- **Honest Feedback**: Real-time transparent error notifications for any API anomaly, with zero fake mock data.
+Every year, millions of eligible Indian students and citizens visit government welfare and Direct Benefit Transfer (DBT) portals—such as the National Scholarship Portal (NSP). However, they face significant usability hurdles:
+1. **Dense, Overwhelming Sarkari Interfaces**: Portals feature dozens of nested forms, ambiguous labels, multi-step validation checks, and dense terminology that confuse first-generation learners and rural applicants.
+2. **Linguistic & Technological Divide**: Users who are uncomfortable typing or reading complex bureaucratic terms struggle to locate basic affordances (e.g., finding where to enter Date of Birth, where to upload income certificates, or where to track application status).
+3. **Static, Fragile Hardcoding**: Traditional search tools or brittle page scripts break when DOM hierarchies shift or when users phrase queries in colloquial Hinglish (e.g., *"mera form jama karne wala button kahan hai"* or *"dob daalna hai"*).
 
 ---
 
-## 🏛️ Architecture & Data Flow
+## 💡 The Solution: Margdarshak (मार्गदर्शक)
+
+**Margdarshak** bridges the digital divide with an end-to-end multi-modal voice navigation pipeline:
+- 🎙️ **Voice-First Input**: Users tap once and speak naturally in Hindi, Hinglish, English, or their native Indic tongue.
+- ⚡ **Dynamic DOM Affordance Scanner**: Margdarshak dynamically scans all visible, interactive form inputs, selects, labels, section cards, and buttons on the live page at query time—extracting rich contextual affordances and semantic keywords without relying on brittle hardcoded coordinates.
+- 🧠 **Sarvam-105B Spatial Intent Matching**: Spoken intent is evaluated against live DOM affordances using **Sarvam-105B**, accurately mapping user requests to the precise target element ID even through diverse colloquialisms and mixed-language transcripts.
+- 🎯 **Visual Spotlight & Radar Beacon**: The target element is smoothly scrolled into the viewport center, framed by an animated glowing amber beacon radar and directional pointers. The beacon remains click-through (`pointer-events-none`) so users can interact with form controls directly without interference.
+- 🔊 **Voice Feedback with Bulbul v4-flash**: The model's concise guidance instruction is converted into natural speech via **Bulbul v4-flash** text-to-speech, providing audible step-by-step confirmation.
+
+---
+
+## 🏛️ System Architecture
 
 ```text
-[ Citizen Speaks ] 🎙️
+[ Citizen Speaks ] 🎙️ (Tap-to-Talk / VAD)
        │
-       ▼ (Audio Blob: WebM/WAV)
-[ /api/transcribe ] ───► [ Sarvam Saaras v4 STT API ]
-       │
-       ▼ (Transcript & Detected Language Code)
-[ /api/chat ] ─────────► [ Sarvam-105B Completions API ]
-       │                  └─ Evaluates against data/schemes.json
-       ▼ (4-Line Grounded Answer)
-[ /api/tts ] ──────────► [ Sarvam Bulbul v4-Flash TTS API ]
-       │
-       ▼ (Base64 WAV Audio)
-[ Browser Audio Player ] 🔊 ("Suno / सुनो")
-
-─────────────────────────────────────────────────────────────
-[ Document Pre-Check Engine (Deterministic TS) ]
-   ├── Sample Aadhaar (JSON)
-   └── Sample Income Certificate (JSON)
-       │
-       ├── Levenshtein Fuzzy String Match (Name)
-       ├── Date Component Match (DOB)
-       └── Income Threshold Evaluator
-       │
+       ▼ (Audio: WebM 16kHz Mono)
+[ /api/transcribe ]
+       │  └─► Sarvam Saaras v4 STT (Auto-Language Identification / Hinglish / Indic)
+       ▼ (Transcript & Detected Language)
+[ Dynamic DOM Affordance Scanner ]
+       │  └─ Extracts visible inputs, buttons, section titles & semantic keywords
        ▼
-[ Rejection Risk Report + Exact Remediation Steps ]
+[ /api/chat ]
+       │  └─► Sarvam-105B Spatial Intent Engine + Deterministic Keyword Matcher Fallback
+       ▼ (Resolved Target ID & Hindi Guidance)
+┌───────────────────────────────────────────────┐
+│              Browser UI Response              │
+├───────────────────────────────────────────────┤
+│  1. Smooth scroll target element into view    │
+│  2. Activate visual beacon spotlight overlay  │
+│  3. /api/tts ──► Sarvam Bulbul v4-flash Voice │
+└───────────────────────────────────────────────┘
 ```
+
+---
+
+## 🚀 Key Features & Highlights
+
+### 1. Robust Audio Capture & Voice Activity Detection (VAD)
+- **Standardized Audio Constraints**: Initialized with `{ channelCount: 1, sampleRate: 16000, echoCancellation: true, noiseSuppression: true, autoGainControl: true }` for cross-platform compatibility across headsets, laptops, and mobile devices.
+- **Continuous 100ms Chunking**: Buffers audio via `MediaRecorder.start(100)` to guarantee uncorrupted WebM payloads.
+- **Grace-Period VAD**: Evaluates RMS energy in real time with an initial 2.0-second silence grace window, preventing premature cutoffs before speech concludes.
+- **Real-Time Visual Volume Ring**: Widget reflects live voice intensity through an animated dynamic soundwave ring and volume meter.
+- **State Decoupling & Reliable Re-Clicking**: Recording state is synchronized through dedicated React refs (`isRecordingRef`), ensuring consecutive clicks never deadlock or produce empty 400-byte buffers.
+
+### 2. Truly Multilingual Transcriptions (`saaras:v4`)
+- Integrated with Sarvam's **Saaras v4** speech-to-text API.
+- Offers an interactive in-widget Language Selector (`Auto`, `हिन्दी`, `Eng`) to let users either force Hindi or leverage Saaras's native auto-identification for code-mixed Hinglish and regional languages.
+
+### 3. Spatial Affordance Mapping & Intent Engine (`sarvam-105b`)
+- Full coverage of portal elements:
+  - Full Name (`#field-name`)
+  - Father's / Guardian's Name (`#field-father`)
+  - Date of Birth (`#field-dob`)
+  - Gender (`#field-gender`)
+  - Social Category (`#field-category`)
+  - Aadhaar Number (`#field-aadhaar`)
+  - Domicile State (`#field-state`)
+  - District (`#field-district`)
+  - PIN Code (`#field-pincode`)
+  - Annual Family Income (`#field-income`)
+  - College / Institute (`#field-college`)
+  - Current Course (`#field-course`)
+  - Bank Account Number (`#field-account`)
+  - Bank IFSC Code (`#field-ifsc`)
+  - Document Upload (`#field-doc`)
+  - Track Status (`#nav-status`)
+  - Login & Registration (`#nav-login`, `#nav-register`)
+  - Submit Application (`#btn-submit`)
+- **Weighted Semantic Fallback**: Backed by a deterministic scoring matcher across label tokens and keyword dictionaries if network latency or connectivity affects the completion call.
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Framework**: Next.js 14 (App Router, Server Components + API Routes)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS (Bharat-first palette)
-- **Icons**: Lucide React
-- **AI Infrastructure (Sarvam AI)**:
-  - Speech-to-Text: `saaras:v4` (REST API)
-  - LLM Reasoning: `sarvam-105b` (Zero-hallucination chat completions)
-  - Speech Synthesis: `bulbul:v4-flash` (Indic TTS)
+| Layer | Technology |
+|---|---|
+| **Framework** | Next.js 14 (App Router, Server Components, API Routes) |
+| **Language** | TypeScript |
+| **Styling** | Tailwind CSS (Accessible Government & Bharat Color Palette) |
+| **Icons** | Lucide React |
+| **Speech-to-Text (STT)** | Sarvam AI `saaras:v4` |
+| **Language Reasoning** | Sarvam AI `sarvam-105b` |
+| **Text-to-Speech (TTS)** | Sarvam AI `bulbul:v4-flash` (`hi-IN`) |
 
 ---
 
-## 📋 Included Verified Schemes (`data/schemes.json`)
+## 📂 Project Structure
 
-1. **Post-Matric Scholarship for SC Students**
-   - *Ministry*: Ministry of Social Justice and Empowerment
-   - *Income Ceiling*: ₹2,50,000 / year
-   - *Official Portal*: [https://scholarships.gov.in](https://scholarships.gov.in)
-2. **Central Sector Scheme of Scholarship for College and University Students (PM-USP CSSS)**
-   - *Ministry*: Department of Higher Education, Ministry of Education
-   - *Criteria*: >80th percentile in Class 12, regular college degree
-   - *Income Ceiling*: ₹4,50,000 / year
-   - *Official Portal*: [https://scholarships.gov.in](https://scholarships.gov.in)
-
----
-
-## 🧪 Local Setup & Verification
-
-1. **Clone the repository**:
-   ```bash
-   git clone <repo-url>
-   cd sarvam-sahayak
-   ```
-
-2. **Configure Environment Variables**:
-   Create a `.env.local` file:
-   ```env
-   SARVAM_API_KEY=your_sarvam_api_key_here
-   ```
-
-3. **Install Dependencies & Build**:
-   ```bash
-   npm install
-   npm run build
-   ```
-
-4. **Run Server**:
-   ```bash
-   npm run start
-   # or for development:
-   npm run dev
-   ```
-
-5. **Live Deployment**:
-   - Vercel: Deploy directly by importing the GitHub repository and adding `SARVAM_API_KEY` under Environment Variables.
-   - Live URL: `[Placeholder for Vercel Deployment Link]`
+```text
+├── app/
+│   ├── api/
+│   │   ├── chat/          # Sarvam-105B spatial navigation & intent matching
+│   │   ├── transcribe/    # Sarvam Saaras v4 STT audio processing
+│   │   └── tts/           # Sarvam Bulbul v4-flash voice synthesis
+│   ├── page.tsx           # National Scholarship & DBT Portal Simulation Page
+│   ├── layout.tsx         # Root layout with fonts & metadata
+│   └── globals.css        # Tailwind styles & radar pulse animations
+├── components/
+│   ├── MargdarshakWidget.tsx     # Floating draggable voice assistant widget
+│   └── MargdarshakSpotlight.tsx  # Non-blocking radar spotlight & guidance card
+├── lib/
+│   └── navigation-elements.ts    # Element schemas & semantic keyword dictionaries
+├── data/
+│   └── schemes.json              # Verified government schemes reference database
+└── public/                       # Static public assets
+```
 
 ---
 
-## ⚠️ Disclaimer
+## ⚡ Getting Started
 
-*Pre-check only. Final decision rests with the office.*
-*यह केवल पूर्व-जांच है। अंतिम निर्णय संबंधित सरकारी कार्यालय का होगा।*
+### 1. Clone the Repository
+```bash
+git clone https://github.com/basantbansal/sahayak.git
+cd sahayak
+```
+
+### 2. Configure Environment Variables
+Create a `.env.local` file in the root directory:
+```env
+SARVAM_API_KEY=your_sarvam_api_key_here
+```
+
+### 3. Install Dependencies
+```bash
+npm install
+```
+
+### 4. Run the Development Server
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### 5. Production Build
+```bash
+npm run build
+npm run start
+```
+
+---
+
+## 📜 License
+
+Distributed under the MIT License. Built with ❤️ for Bharat by Basant Bansal.

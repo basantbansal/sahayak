@@ -4,7 +4,10 @@ import schemesData from '@/data/schemes.json';
 interface NavElementInput {
   id: string;
   label: string;
-  description: string;
+  section?: string;
+  keywords?: string[];
+  tag?: string;
+  description?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -37,18 +40,36 @@ export async function POST(req: NextRequest) {
       let rawReply = '';
 
       try {
-        const navSystemPrompt = `You are "Margdarshak" (मार्गदर्शक), an Indian government welfare portal visual voice navigation assistant.
-The user speaks in Hindi, Hinglish, English, or other Indic languages (Marathi, Bengali, Tamil, Telugu, etc.) to locate or interact with a UI element on the portal page.
-Transcripts may contain Hinglish (mixed Hindi-English), regional Indic words, or slight ASR errors — understand intent and match the best UI element accordingly.
+        const navSystemPrompt = `You are Margdarshak, an intelligent UI navigation engine for Indian government portals.
+Given the user's spoken transcript (which may be in Hindi, Hinglish, English, or regional Indic languages) and a list of DOM elements, select the single best target element ID.
 
 Available UI Elements on this page:
 ${JSON.stringify(availableElements, null, 2)}
 
-Instructions:
-1. Identify which single "targetId" best matches the user's spoken request (handle Hinglish/Indic intent, not just exact keywords).
-2. Formulate a polite, clear, natural instruction sentence in Hindi (1 single sentence) guiding the user where to click or fill.
-3. Output strictly valid JSON matching this exact structure:
-{"targetId": "<matching_element_id>", "hindiInstruction": "<hindi instruction sentence>"}
+Rules:
+- Understand synonyms and translations:
+  * "DOB", "जन्म तिथि", "birth date", "उम्र", "birthday", "date of birth" -> field-dob
+  * "नाम", "name", "naam", "candidate name", "applicant name" -> field-name
+  * "पिता का नाम", "father name", "guardian", "father", "pitaji" -> field-father
+  * "जाति", "category", "caste", "SC/ST/OBC", "general", "shreni" -> field-category
+  * "लिंग", "gender", "male", "female", "purush", "mahila" -> field-gender
+  * "आधार", "aadhaar", "aadhar number", "uidai", "aadhaar card" -> field-aadhaar
+  * "आय", "income", "salary", "aamdani", "kamai", "annual income", "paisa" -> field-income
+  * "राज्य", "state", "domicile", "niwas", "pradesh" -> field-state
+  * "जिला", "district", "zila", "city", "shahar" -> field-district
+  * "पिन कोड", "pincode", "postal code", "pin" -> field-pincode
+  * "कॉलेज", "college", "institute", "school", "university", "sansthan" -> field-college
+  * "कोर्स", "course", "degree", "diploma", "kaksha", "class" -> field-course
+  * "बैंक खाता", "bank account", "account number", "khata", "dbt account" -> field-account
+  * "आईएफएससी", "ifsc", "ifsc code", "branch code" -> field-ifsc
+  * "दस्तावेज़", "document", "upload", "marksheet", "income cert", "file" -> field-doc
+  * "स्टेटस", "status", "track", "application check", "sthiti" -> nav-status
+  * "लॉगिन", "sign in", "login", "portal entry", "pravesh" -> nav-login
+  * "रजिस्ट्रेशन", "registration", "new user", "sign up", "panjikaran" -> nav-register
+  * "सबमिट", "jama karein", "submit", "apply", "final submit" -> btn-submit
+- Formulate a single concise, polite guidance sentence in the user's language (default to Hindi).
+- Output strictly valid JSON matching this exact structure:
+{"targetId": "<matching_element_id>", "instruction": "<guidance>"}
 
 IMPORTANT: Return ONLY the JSON object. Do not include markdown code fences, notes, or extra commentary.`;
 
@@ -85,8 +106,9 @@ IMPORTANT: Return ONLY the JSON object. Do not include markdown code fences, not
             if (parsed.targetId && (elementIds.length === 0 || elementIds.includes(parsed.targetId))) {
               targetId = parsed.targetId;
             }
-            if (parsed.hindiInstruction && typeof parsed.hindiInstruction === 'string') {
-              hindiInstruction = parsed.hindiInstruction.trim();
+            const guide = parsed.instruction || parsed.hindiInstruction;
+            if (guide && typeof guide === 'string') {
+              hindiInstruction = guide.trim();
             }
           }
         }
@@ -94,71 +116,59 @@ IMPORTANT: Return ONLY the JSON object. Do not include markdown code fences, not
         console.warn('Sarvam-105B navigation API fetch warning:', fetchErr);
       }
 
-      // Robust fallback matching if AI response is unavailable or missing targetId
-      if (!targetId) {
-        const lower = message.toLowerCase();
-        if (
-          lower.includes('लॉगिन') ||
-          lower.includes('login') ||
-          lower.includes('साइन इन') ||
-          lower.includes('sign in')
-        ) {
-          targetId = 'nav-login';
-          hindiInstruction = 'लॉगिन करने के लिए यहाँ ऊपर दिए गए लॉगिन बटन पर क्लिक करें।';
-        } else if (
-          lower.includes('रजिस्टर') ||
-          lower.includes('पंजीकरण') ||
-          lower.includes('register') ||
-          lower.includes('sign up')
-        ) {
-          targetId = 'nav-register';
-          hindiInstruction = 'नया खाता या पंजीकरण करने के लिए यहाँ ऊपर क्लिक करें।';
-        } else if (
-          lower.includes('दस्तावेज़') ||
-          lower.includes('डॉक्यूमेंट') ||
-          lower.includes('upload') ||
-          lower.includes('अपलोड') ||
-          lower.includes('कागज़') ||
-          lower.includes('marksheet') ||
-          lower.includes('अंकसूची')
-        ) {
-          targetId = 'field-doc';
-          hindiInstruction = 'अपना आय प्रमाण पत्र या अंकसूची यहाँ अपलोड करें।';
-        } else if (
-          lower.includes('आय') ||
-          lower.includes('income') ||
-          lower.includes('सैलरी') ||
-          lower.includes('पैसे') ||
-          lower.includes('कमाई')
-        ) {
-          targetId = 'field-income';
-          hindiInstruction = 'अपने परिवार की कुल वार्षिक आय यहाँ दर्ज करें।';
-        } else if (
-          lower.includes('नाम') ||
-          lower.includes('name') ||
-          lower.includes('आवेदक')
-        ) {
-          targetId = 'field-name';
-          hindiInstruction = 'यहाँ आधार कार्ड के अनुसार अपना पूरा नाम दर्ज करें।';
-        } else if (
-          lower.includes('राज्य') ||
-          lower.includes('state') ||
-          lower.includes('निवास')
-        ) {
-          targetId = 'field-state';
-          hindiInstruction = 'अपने मूल निवास राज्य का चयन करने के लिए यहाँ क्लिक करें।';
-        } else if (
-          lower.includes('सबमिट') ||
-          lower.includes('submit') ||
-          lower.includes('जमा') ||
-          lower.includes('आवेदन')
-        ) {
-          targetId = 'btn-submit';
-          hindiInstruction = 'आवेदन पूरा करने के बाद यहाँ क्लिक करके फॉर्म जमा करें।';
-        } else {
-          targetId = elementIds[0] || 'nav-login';
-          hindiInstruction = 'यहाँ संबंधित विकल्प उपलब्ध है, कृपया जाँच करें।';
+      // High-precision deterministic fallback scoring if AI response is unavailable or returned invalid targetId
+      if (!targetId || !elementIds.includes(targetId)) {
+        const queryLower = message.toLowerCase().trim();
+        const tokens = queryLower.split(/\s+/).filter(Boolean);
+
+        let bestMatchId = '';
+        let highestScore = 0;
+
+        for (const el of availableElements) {
+          let score = 0;
+          const labelLower = (el.label || '').toLowerCase();
+          const idLower = el.id.toLowerCase();
+          const sectionLower = (el.section || '').toLowerCase();
+          const keywords = (el.keywords || []).map((k) => k.toLowerCase());
+
+          // Direct inclusion of ID
+          if (queryLower.includes(idLower.replace('field-', '').replace('nav-', '').replace('btn-', ''))) {
+            score += 10;
+          }
+
+          // Keyword matches
+          for (const kw of keywords) {
+            if (queryLower.includes(kw)) {
+              score += 8;
+            }
+          }
+
+          // Label token overlap
+          for (const tok of tokens) {
+            if (tok.length > 2 && labelLower.includes(tok)) {
+              score += 4;
+            }
+            if (tok.length > 2 && sectionLower.includes(tok)) {
+              score += 2;
+            }
+          }
+
+          if (score > highestScore) {
+            highestScore = score;
+            bestMatchId = el.id;
+          }
         }
+
+        if (highestScore > 0 && bestMatchId) {
+          targetId = bestMatchId;
+          const matchedEl = availableElements.find((e) => e.id === targetId);
+          hindiInstruction = `${matchedEl?.label || 'इस फ़ील्ड'} पर ध्यान दें।`;
+        }
+      }
+
+      if (!targetId && elementIds.length > 0) {
+        targetId = elementIds[0];
+        hindiInstruction = 'यहाँ विकल्प उपलब्ध है, कृपया जाँच करें।';
       }
 
       if (!hindiInstruction) {
@@ -168,6 +178,7 @@ IMPORTANT: Return ONLY the JSON object. Do not include markdown code fences, not
       return NextResponse.json({
         targetId,
         hindiInstruction,
+        instruction: hindiInstruction,
         rawReply,
         model: 'sarvam-105b',
       });
