@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   FileText,
   CheckCircle2,
@@ -18,15 +18,11 @@ import {
 } from 'lucide-react';
 import MargdarshakWidget from '@/components/MargdarshakWidget';
 import MargdarshakSpotlight, { ActiveBeacon } from '@/components/MargdarshakSpotlight';
-import AuditDrawer from '@/components/AuditDrawer';
 
 export default function SahayakMargdarshakPage() {
   // State for Visual Beacon Spotlight
   const [activeBeacon, setActiveBeacon] = useState<ActiveBeacon | null>(null);
   const beaconTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // State for Document Audit Drawer
-  const [isAuditDrawerOpen, setIsAuditDrawerOpen] = useState(false);
 
   // Audio Playback State (for sync with spotlight icon)
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
@@ -108,15 +104,6 @@ export default function SahayakMargdarshakPage() {
               <span className="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 cursor-pointer hover:bg-slate-700">A</span>
               <span className="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 cursor-pointer hover:bg-slate-700">A+</span>
             </div>
-            <span className="text-slate-600">|</span>
-            <button
-              type="button"
-              onClick={() => setIsAuditDrawerOpen(true)}
-              className="text-amber-300 hover:text-amber-100 font-bold underline flex items-center gap-1"
-            >
-              <FileText className="w-3 h-3" />
-              <span>ऑडिट पैनल (Audit)</span>
-            </button>
           </div>
         </div>
       </div>
@@ -183,17 +170,6 @@ export default function SahayakMargdarshakPage() {
             >
               <Eye className="w-3.5 h-3.5 text-slate-600" />
               <span>आवेदन स्थिति (Track Status)</span>
-            </button>
-
-            {/* Document Audit Drawer Trigger */}
-            <button
-              type="button"
-              onClick={() => setIsAuditDrawerOpen(true)}
-              className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-bold rounded-lg border border-emerald-300 transition-colors flex items-center space-x-1 shadow-sm"
-              title="Open Document Verification & Rejection Pre-Check Engine"
-            >
-              <FileText className="w-3.5 h-3.5 text-emerald-700" />
-              <span>दस्तावेज़ पूर्व-जांच</span>
             </button>
           </div>
         </div>
@@ -336,20 +312,31 @@ export default function SahayakMargdarshakPage() {
 
                   {/* Father's Name */}
                   <div className="space-y-1.5">
-                    <label className="font-bold text-slate-800">पिता / अभिभावक का नाम (Father's Name) *</label>
+                    <label htmlFor="field-father" className="font-bold text-slate-800 flex items-center justify-between">
+                      <span>पिता / अभिभावक का नाम (Father's Name) *</span>
+                      <span className="text-[10px] text-orange-700 bg-orange-100 px-1.5 py-0.2 rounded font-mono">#field-father</span>
+                    </label>
                     <input
+                      id="field-father"
+                      data-mg-id="field-father"
                       type="text"
                       value={formData.fatherName}
                       onChange={(e) => setFormData({ ...formData, fatherName: e.target.value })}
+                      placeholder="उदा. रमेश कुमार"
                       className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium"
                     />
                   </div>
 
                   {/* DOB */}
                   <div className="space-y-1.5">
-                    <label className="font-bold text-slate-800">जन्म तिथि (Date of Birth) *</label>
+                    <label htmlFor="field-dob" className="font-bold text-slate-800 flex items-center justify-between">
+                      <span>जन्म तिथि (Date of Birth) *</span>
+                      <span className="text-[10px] text-orange-700 bg-orange-100 px-1.5 py-0.2 rounded font-mono">#field-dob</span>
+                    </label>
                     <div className="relative">
                       <input
+                        id="field-dob"
+                        data-mg-id="field-dob"
                         type="date"
                         value={formData.dob}
                         onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
@@ -360,8 +347,13 @@ export default function SahayakMargdarshakPage() {
 
                   {/* Gender */}
                   <div className="space-y-1.5">
-                    <label className="font-bold text-slate-800">लिंग (Gender) *</label>
+                    <label htmlFor="field-gender" className="font-bold text-slate-800 flex items-center justify-between">
+                      <span>लिंग (Gender) *</span>
+                      <span className="text-[10px] text-orange-700 bg-orange-100 px-1.5 py-0.2 rounded font-mono">#field-gender</span>
+                    </label>
                     <select
+                      id="field-gender"
+                      data-mg-id="field-gender"
                       value={formData.gender}
                       onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                       className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium"
@@ -374,8 +366,13 @@ export default function SahayakMargdarshakPage() {
 
                   {/* Category */}
                   <div className="space-y-1.5">
-                    <label className="font-bold text-slate-800">सामाजिक श्रेणी (Category) *</label>
+                    <label htmlFor="field-category" className="font-bold text-slate-800 flex items-center justify-between">
+                      <span>सामाजिक श्रेणी (Category) *</span>
+                      <span className="text-[10px] text-orange-700 bg-orange-100 px-1.5 py-0.2 rounded font-mono">#field-category</span>
+                    </label>
                     <select
+                      id="field-category"
+                      data-mg-id="field-category"
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                       className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium"
@@ -390,8 +387,13 @@ export default function SahayakMargdarshakPage() {
 
                   {/* Aadhaar Number */}
                   <div className="space-y-1.5">
-                    <label className="font-bold text-slate-800">आधार संख्या (Aadhaar Number) *</label>
+                    <label htmlFor="field-aadhaar" className="font-bold text-slate-800 flex items-center justify-between">
+                      <span>आधार संख्या (Aadhaar Number) *</span>
+                      <span className="text-[10px] text-orange-700 bg-orange-100 px-1.5 py-0.2 rounded font-mono">#field-aadhaar</span>
+                    </label>
                     <input
+                      id="field-aadhaar"
+                      data-mg-id="field-aadhaar"
                       type="text"
                       value={formData.aadhaarNumber}
                       onChange={(e) => setFormData({ ...formData, aadhaarNumber: e.target.value })}
@@ -441,22 +443,34 @@ export default function SahayakMargdarshakPage() {
 
                   {/* District */}
                   <div className="space-y-1.5">
-                    <label className="font-bold text-slate-800">गृह जिला (District) *</label>
+                    <label htmlFor="field-district" className="font-bold text-slate-800 flex items-center justify-between">
+                      <span>गृह जिला (District) *</span>
+                      <span className="text-[10px] text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded font-mono">#field-district</span>
+                    </label>
                     <input
+                      id="field-district"
+                      data-mg-id="field-district"
                       type="text"
                       value={formData.district}
                       onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                      placeholder="उदा. लखनऊ"
                       className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
                     />
                   </div>
 
                   {/* PIN Code */}
                   <div className="space-y-1.5">
-                    <label className="font-bold text-slate-800">पिन कोड (PIN Code) *</label>
+                    <label htmlFor="field-pincode" className="font-bold text-slate-800 flex items-center justify-between">
+                      <span>पिन कोड (PIN Code) *</span>
+                      <span className="text-[10px] text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded font-mono">#field-pincode</span>
+                    </label>
                     <input
+                      id="field-pincode"
+                      data-mg-id="field-pincode"
                       type="text"
                       value={formData.pincode}
                       onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+                      placeholder="226001"
                       className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
                     />
                   </div>
@@ -508,41 +522,65 @@ export default function SahayakMargdarshakPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
                   <div className="space-y-1.5">
-                    <label className="font-bold text-slate-800">संस्थान / कॉलेज का नाम (Institute Name) *</label>
+                    <label htmlFor="field-college" className="font-bold text-slate-800 flex items-center justify-between">
+                      <span>संस्थान / कॉलेज का नाम (Institute Name) *</span>
+                      <span className="text-[10px] text-blue-700 bg-blue-100 px-1.5 py-0.2 rounded font-mono">#field-college</span>
+                    </label>
                     <input
+                      id="field-college"
+                      data-mg-id="field-college"
                       type="text"
                       value={formData.institute}
                       onChange={(e) => setFormData({ ...formData, institute: e.target.value })}
+                      placeholder="Government Polytechnic Lucknow"
                       className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="font-bold text-slate-800">वर्तमान कोर्स / कक्षा (Course) *</label>
+                    <label htmlFor="field-course" className="font-bold text-slate-800 flex items-center justify-between">
+                      <span>वर्तमान कोर्स / कक्षा (Course) *</span>
+                      <span className="text-[10px] text-blue-700 bg-blue-100 px-1.5 py-0.2 rounded font-mono">#field-course</span>
+                    </label>
                     <input
+                      id="field-course"
+                      data-mg-id="field-course"
                       type="text"
                       value={formData.course}
                       onChange={(e) => setFormData({ ...formData, course: e.target.value })}
+                      placeholder="Diploma in Computer Science"
                       className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="font-bold text-slate-800">आधार लिंक बैंक खाता संख्या (Bank Account) *</label>
+                    <label htmlFor="field-account" className="font-bold text-slate-800 flex items-center justify-between">
+                      <span>आधार लिंक बैंक खाता संख्या (Bank Account) *</span>
+                      <span className="text-[10px] text-blue-700 bg-blue-100 px-1.5 py-0.2 rounded font-mono">#field-account</span>
+                    </label>
                     <input
+                      id="field-account"
+                      data-mg-id="field-account"
                       type="text"
                       value={formData.bankAccount}
                       onChange={(e) => setFormData({ ...formData, bankAccount: e.target.value })}
+                      placeholder="91823746192837"
                       className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="font-bold text-slate-800">बैंक IFSC कोड (IFSC Code) *</label>
+                    <label htmlFor="field-ifsc" className="font-bold text-slate-800 flex items-center justify-between">
+                      <span>बैंक IFSC कोड (IFSC Code) *</span>
+                      <span className="text-[10px] text-blue-700 bg-blue-100 px-1.5 py-0.2 rounded font-mono">#field-ifsc</span>
+                    </label>
                     <input
+                      id="field-ifsc"
+                      data-mg-id="field-ifsc"
                       type="text"
                       value={formData.ifsc}
                       onChange={(e) => setFormData({ ...formData, ifsc: e.target.value })}
+                      placeholder="SBIN0001234"
                       className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono uppercase"
                     />
                   </div>
@@ -693,7 +731,6 @@ export default function SahayakMargdarshakPage() {
           ========================================================================= */}
       <MargdarshakWidget
         onTriggerBeacon={handleTriggerBeacon}
-        onOpenAuditDrawer={() => setIsAuditDrawerOpen(true)}
         isPlayingAudio={isPlayingAudio}
         setIsPlayingAudio={setIsPlayingAudio}
       />
@@ -705,14 +742,6 @@ export default function SahayakMargdarshakPage() {
         beacon={activeBeacon}
         onDismiss={handleDismissBeacon}
         isPlayingAudio={isPlayingAudio}
-      />
-
-      {/* =========================================================================
-          8. DOCUMENT AUDIT & REJECTION RISK SIDE DRAWER (ON DOUBLE CLICK)
-          ========================================================================= */}
-      <AuditDrawer
-        isOpen={isAuditDrawerOpen}
-        onClose={() => setIsAuditDrawerOpen(false)}
       />
     </div>
   );

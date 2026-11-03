@@ -17,14 +17,12 @@ import { ActiveBeacon } from './MargdarshakSpotlight';
 
 interface MargdarshakWidgetProps {
   onTriggerBeacon: (beacon: ActiveBeacon) => void;
-  onOpenAuditDrawer: () => void;
   isPlayingAudio: boolean;
   setIsPlayingAudio: (playing: boolean) => void;
 }
 
 export default function MargdarshakWidget({
   onTriggerBeacon,
-  onOpenAuditDrawer,
   isPlayingAudio,
   setIsPlayingAudio,
 }: MargdarshakWidgetProps) {
@@ -69,10 +67,6 @@ export default function MargdarshakWidget({
     hasMoved: false,
   });
 
-  // Click & Double click disambiguation ref
-  const clickCountRef = useRef<number>(0);
-  const clickTimerRef = useRef<NodeJS.Timeout | null>(null);
-
   // Initialize widget position on screen mount
   useEffect(() => {
     const initX = Math.max(16, window.innerWidth - 320);
@@ -99,7 +93,6 @@ export default function MargdarshakWidget({
       if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
       if (silenceIntervalRef.current) clearInterval(silenceIntervalRef.current);
       if (hardCutoffTimerRef.current) clearTimeout(hardCutoffTimerRef.current);
-      if (clickTimerRef.current) clearTimeout(clickTimerRef.current);
       if (audioContextRef.current) {
         audioContextRef.current.close().catch(() => {});
       }
@@ -248,13 +241,20 @@ export default function MargdarshakWidget({
       audioElementRef.current = audio;
 
       audio.onplay = () => setIsPlayingAudio(true);
-      audio.onended = () => setIsPlayingAudio(false);
-      audio.onerror = () => setIsPlayingAudio(false);
+      audio.onended = () => {
+        setIsPlayingAudio(false);
+        audioElementRef.current = null;
+      };
+      audio.onerror = () => {
+        setIsPlayingAudio(false);
+        audioElementRef.current = null;
+      };
 
       await audio.play();
     } catch (err: any) {
       console.warn('Bulbul voice playback error:', err.message);
       setIsPlayingAudio(false);
+      audioElementRef.current = null;
     }
   };
 
@@ -270,19 +270,36 @@ export default function MargdarshakWidget({
         const rect = el.getBoundingClientRect();
         return rect.width > 0 && rect.height > 0 && el.offsetParent !== null;
       })
-      .map((el) => ({
-        id: el.id || el.getAttribute('data-mg-id') || el.className.split(' ')[0],
-        label: (
-          el.innerText ||
-          el.getAttribute('aria-label') ||
-          el.getAttribute('placeholder') ||
-          el.id ||
-          ''
-        )
-          .trim()
-          .slice(0, 80),
-        tag: el.tagName.toLowerCase(),
-      }))
+      .map((el) => {
+        // Collect associated label text from label[for], parent label, aria-label, placeholder or preceding label
+        let labelText = '';
+        if (el.id) {
+          const associatedLabel = document.querySelector(`label[for="${el.id}"]`) as HTMLElement | null;
+          if (associatedLabel) {
+            labelText = associatedLabel.innerText || '';
+          }
+        }
+        if (!labelText) {
+          const parentLabel = el.closest('label');
+          if (parentLabel) {
+            labelText = parentLabel.innerText || '';
+          }
+        }
+        if (!labelText) {
+          labelText =
+            el.innerText ||
+            el.getAttribute('aria-label') ||
+            el.getAttribute('placeholder') ||
+            el.id ||
+            '';
+        }
+
+        return {
+          id: el.id || el.getAttribute('data-mg-id') || el.className.split(' ')[0],
+          label: labelText.trim().replace(/\s+/g, ' ').slice(0, 100),
+          tag: el.tagName.toLowerCase(),
+        };
+      })
       .filter((item) => item.id && item.label);
   }, []);
 
@@ -322,8 +339,19 @@ export default function MargdarshakWidget({
       // Fallback: if AI returned nothing or element doesn't exist in DOM, use keyword fallback
       if (!targetId || !document.getElementById(targetId)) {
         const fallback = findFallbackTarget(queryText);
-        targetId = fallback.targetId;
-        hindiInstruction = fallback.hindiInstruction;
+        if (fallback) {
+          targetId = fallback.targetId;
+          hindiInstruction = fallback.hindiInstruction;
+        } else {
+          targetId = null;
+          hindiInstruction = null;
+        }
+      }
+
+      if (!targetId || !document.getElementById(targetId)) {
+        setStatusMessage('कोई संबंधित फ़ील्ड या बटन नहीं मिला। कृपया दोबारा कहें।');
+        setTimeout(() => setStatusMessage(null), 3500);
+        return;
       }
 
       const matchingEl = dynamicElements.find((el) => el.id === targetId);
@@ -345,7 +373,9 @@ export default function MargdarshakWidget({
       setStatusMessage(null);
 
       // Speak guidance in Hindi
-      await playHindiGuidanceVoice(hindiInstruction);
+      if (hindiInstruction) {
+        await playHindiGuidanceVoice(hindiInstruction);
+      }
     } catch (err: any) {
       if (err.name === 'AbortError') return; // Silently ignore aborted requests
       setErrorMessage(`मार्गदर्शन त्रुटि: ${err.message || 'त्रुटि हुई'}`);
@@ -354,6 +384,7 @@ export default function MargdarshakWidget({
       // Always unlock the mic button, no matter what happened
       setIsProcessing(false);
       setIsRecording(false);
+      setIsSpeaking(false);
       audioChunksRef.current = [];
       // Release mic stream if still held
       if (streamRef.current) {
@@ -530,40 +561,27 @@ export default function MargdarshakWidget({
     }
   };
 
-  // Handle single click vs double click on widget
-  const handleWidgetClick = () => {
-    if (dragStartRef.current.hasMoved) {
-      return;
+  // Start or stop recording toggle
+  const toggleRecording = () => {
+    // If audio is currently playing, pause it immediately
+    if (audioElementRef.current) {
+      audioElementRef.current.pause();
+      audioElementRef.current = null;
+      setIsPlayingAudio(false);
     }
 
-    clickCountRef.current += 1;
-
-    if (clickCountRef.current === 1) {
-      clickTimerRef.current = setTimeout(() => {
-        clickCountRef.current = 0;
-        // Single Click: Start / Stop Voice Recording
-        if (isRecording) {
-          stopRecordingInternal();
-        } else {
-          // If processing a previous query, cancel it first then start fresh recording
-          if (isProcessing) {
-            if (navAbortControllerRef.current) {
-              navAbortControllerRef.current.abort();
-            }
-            setIsProcessing(false);
-            setStatusMessage(null);
-          }
-          startRecording();
+    if (isRecording) {
+      stopRecordingInternal();
+    } else {
+      // If processing a previous query, abort it first and immediately start recording
+      if (isProcessing) {
+        if (navAbortControllerRef.current) {
+          navAbortControllerRef.current.abort();
         }
-      }, 260);
-    } else if (clickCountRef.current >= 2) {
-      if (clickTimerRef.current) {
-        clearTimeout(clickTimerRef.current);
-        clickTimerRef.current = null;
+        setIsProcessing(false);
+        setStatusMessage(null);
       }
-      clickCountRef.current = 0;
-      // Double Click: Slide open side drawer
-      onOpenAuditDrawer();
+      startRecording();
     }
   };
 
@@ -610,7 +628,7 @@ export default function MargdarshakWidget({
 
             <button
               type="button"
-              onClick={handleWidgetClick}
+              onClick={toggleRecording}
               className={`relative w-16 h-16 rounded-full flex flex-col items-center justify-center transition-all transform active:scale-95 shadow-xl ${
                 isRecording
                   ? 'bg-red-600 text-white ring-4 ring-red-300'
@@ -621,7 +639,9 @@ export default function MargdarshakWidget({
               title={
                 isProcessing
                   ? 'क्लिक करें: नई रिकॉर्डिंग शुरू करें (रद्द करेगा पिछली)'
-                  : 'एक बार क्लिक करें: बोलें | दो बार क्लिक करें: ऑडिट पैनल'
+                  : isRecording
+                  ? 'रोकने के लिए क्लिक करें'
+                  : 'बोलने के लिए क्लिक करें'
               }
             >
               {isRecording ? (
@@ -718,18 +738,6 @@ export default function MargdarshakWidget({
               <span className="text-[10px] text-amber-200 font-mono">→ submit</span>
             </button>
           </div>
-        </div>
-
-        {/* Audit Drawer Shortcut & Double Click Hint */}
-        <div className="mt-2 pt-2 border-t border-white/20 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={onOpenAuditDrawer}
-            className="w-full text-center text-[11px] font-bold text-amber-100 hover:text-white bg-black/20 hover:bg-black/30 py-1 px-2 rounded-lg transition-colors flex items-center justify-center space-x-1"
-          >
-            <FileText className="w-3 h-3 text-amber-200" />
-            <span>दस्तावेज़ ऑडिट (Double Click mic or tap)</span>
-          </button>
         </div>
 
         {/* Error notification if any */}
