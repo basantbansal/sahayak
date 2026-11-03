@@ -10,11 +10,85 @@
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background: #f8fafc;
   min-height: 100vh;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+/* Sarkari Marquee Animation */
+@keyframes ticker-slide {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-ticker {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: ticker-slide 28s linear infinite;
+}
+
+.animate-ticker:hover {
+  animation-play-state: paused;
+}
+
+/* Sound wave animation for recording */
+@keyframes soundwave-1 {
+  0%, 100% { height: 6px; }
+  50% { height: 26px; }
+}
+@keyframes soundwave-2 {
+  0%, 100% { height: 14px; }
+  50% { height: 32px; }
+}
+@keyframes soundwave-3 {
+  0%, 100% { height: 8px; }
+  50% { height: 22px; }
+}
+
+.wave-bar-1 {
+  animation: soundwave-1 0.65s ease-in-out infinite;
+}
+.wave-bar-2 {
+  animation: soundwave-2 0.5s ease-in-out infinite 0.1s;
+}
+.wave-bar-3 {
+  animation: soundwave-3 0.75s ease-in-out infinite 0.2s;
+}
+
+/* Radar pulse animation for visual beacon */
+@keyframes beacon-radar-pulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.18);
+    opacity: 0;
+  }
+}
+
+.animate-beacon-radar {
+  animation: beacon-radar-pulse 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Bouncing Arrow pointer */
+@keyframes beacon-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-beacon-arrow {
+  animation: beacon-bounce 1.2s ease-in-out infinite;
 }

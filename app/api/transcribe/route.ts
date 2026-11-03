@@ -12,6 +12,8 @@ export async function POST(req: NextRequest) {
 
     const incomingFormData = await req.formData();
     const file = incomingFormData.get('file');
+    // Support optional language override; default to hi-IN for accurate Hindi recognition
+    const languageCode = (incomingFormData.get('language_code') as string | null) || 'hi-IN';
 
     if (!file || !(file instanceof Blob)) {
       return NextResponse.json(
@@ -21,11 +23,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Prepare multipart payload for Sarvam STT REST API (Saaras v4)
+    // Force MIME type to 'audio/webm' to avoid Sarvam 400 Bad Request errors
+    const cleanBlob = new Blob([await file.arrayBuffer()], { type: 'audio/webm' });
     const sarvamFormData = new FormData();
-    // Default to recording.webm if no filename exists
-    const filename = (file as any).name || 'recording.webm';
-    sarvamFormData.append('file', file, filename);
+    sarvamFormData.append('file', cleanBlob, 'recording.webm');
     sarvamFormData.append('model', 'saaras:v4');
+    sarvamFormData.append('language_code', languageCode);
     sarvamFormData.append('mode', 'transcribe');
 
     const response = await fetch('https://api.sarvam.ai/speech-to-text', {
@@ -50,8 +53,21 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await response.json();
+    console.log('Sarvam STT response:', JSON.stringify(result));
+
+    const transcript = result.transcript ?? '';
+    if (!transcript || !transcript.trim()) {
+      // Sarvam returned 200 but no speech detected — return gracefully
+      return NextResponse.json({
+        transcript: '',
+        error: 'No speech detected',
+        language_code: result.language_code || 'hi-IN',
+        request_id: result.request_id,
+      });
+    }
+
     return NextResponse.json({
-      transcript: result.transcript || '',
+      transcript,
       language_code: result.language_code || 'hi-IN',
       request_id: result.request_id,
     });
